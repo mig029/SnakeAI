@@ -67,21 +67,18 @@ class MainWindow(QtWidgets.QMainWindow):
         individuals: List[Individual] = []
                     
         #need to add to check population folder and auto load
-       
-        #cwd = os.getcwd()
-
-        path =  "population/"
-        name = 'best_snake' 
+        path = os.getcwd()
+        path = path + "\\population"
+        totalDir = 0
         for root, dirs, files in os.walk(path):
-            if name in files:
-                print(os.path.join(root, name))
-
-        #for i in range(0,209):
-            #individuals.append(load_snake('population', 'best_snake_gen_{}'.format(i), self.settings))
+            for directories in dirs:
+                totalDir += 1
+        for i in range(0,totalDir):
+            individuals.append(load_snake('population', 'best_snake_gen_{}'.format(i), self.settings))
 
 
         
-        for _ in range(self.settings['num_parents']):
+        for _ in range(self.settings['num_parents'] - totalDir):
             individual = Snake(self.board_size, hidden_layer_architecture=self.settings['hidden_network_architecture'],
                               hidden_activation=self.settings['hidden_layer_activation'],
                               output_activation=self.settings['output_layer_activation'],
@@ -181,7 +178,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 print('----Average fitness:', self.population.average_fitness)
 
                 #Future Check Population folder and add variable to start appending to generation
-                save_snake('population\\', 'best_snake_gen_{}'.format(self.current_generation), self.snake, self.settings)
+                path = os.getcwd()
+                path = path + "\\population"
+                totalDir = 0
+                for root, dirs, files in os.walk(path):
+                    for directories in dirs:
+                        totalDir += 1
+                save_snake('population', 'best_snake_gen_{}'.format(totalDir), self.snake, self.settings)
 
                 self.next_generation()
             else:
