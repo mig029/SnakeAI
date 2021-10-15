@@ -23,7 +23,7 @@ SQUARE_SIZE = (35, 35)
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, settings, show=True, fps=120):
+    def __init__(self, settings, show=True, fps=60):
         super().__init__()
         self.setAutoFillBackground(True)
         palette = self.palette()
@@ -49,6 +49,8 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             raise Exception('Selection type "{}" is invalid'.format(self.settings['selection_type']))
 
+        def new_game(self):
+            print("Clicked")
         
         self.board_size = settings['board_size']
         self.border = (0, 10, 0, 10)  # Left, Top, Right, Bottom
@@ -59,51 +61,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self._snake_widget_width = max(self.snake_widget_width, 620)
         self._snake_widget_height = max(self.snake_widget_height, 600)
 
+        
+
+
         self.top = 150
         self.left = 150
         self.width = self._snake_widget_width + 700 + 200 + self.border[0] + self.border[2]
         self.height = self._snake_widget_height + self.border[1] + self.border[3] + 200 + 200
-        
-        individuals: List[Individual] = []
-                    
-        #need to add to check population folder and auto load
-        path = os.getcwd()
-        path = path + "\\population"
-        totalDir = 0
-        for root, dirs, files in os.walk(path):
-            for directories in dirs:
-                totalDir += 1
-        for i in range(0,totalDir):
-            individuals.append(load_snake('population', 'best_snake_gen_{}'.format(i), self.settings))
-
-
-        
-        for _ in range(self.settings['num_parents'] - totalDir):
-            individual = Snake(self.board_size, hidden_layer_architecture=self.settings['hidden_network_architecture'],
-                              hidden_activation=self.settings['hidden_layer_activation'],
-                              output_activation=self.settings['output_layer_activation'],
-                              lifespan=self.settings['lifespan'],
-                              apple_and_self_vision=self.settings['apple_and_self_vision'])
-            individuals.append(individual)
-       
-
-        self.best_fitness = 0
-        self.best_score = 0
-
-        self._current_individual = 0
-        self.population = Population(individuals)
-
-        self.snake = self.population.individuals[self._current_individual]
-        self.current_generation = 0
 
         self.init_window()
 
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.update)
-        self.timer.start(1000./fps)
-
         if show:
             self.show()
+
+       
 
     def init_window(self):
         self.centralWidget = QtWidgets.QWidget(self)
@@ -111,6 +82,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle('Snake AI')
         self.setGeometry(self.top, self.left, self.width, self.height)
 
+        #new GAme Button
+        self.newGameButton = QtWidgets.QPushButton(self)
+        self.newGameButton.setText("New Game")
+        self.newGameButton.move(500,500)
+        self.newGameButton.clicked.connect(self.new_game)
+
+
+    def new_game_two(self):
         # Create the Neural Network window
         self.nn_viz_window = NeuralNetworkViz(self.centralWidget, self.snake)
         self.nn_viz_window.setGeometry(QtCore.QRect(0, 0, 600, self._snake_widget_height + self.border[1] + self.border[3] + 200))
@@ -126,6 +105,64 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ga_window.setGeometry(QtCore.QRect(600, self.border[1] + self.border[3] + self.snake_widget_height, self._snake_widget_width + self.border[0] + self.border[2] + 100 + 200, 400-10))
         self.ga_window.setObjectName('ga_window')
 
+        
+
+    def new_game(self):
+        individuals: List[Individual] = []
+        load_status = 1
+        gen_start = 0
+
+        #need to add to check population folder and auto load
+        path = os.getcwd()
+        path = path + "\\population"
+        totalDir = 0
+        for root, dirs, files in os.walk(path):
+            for directories in dirs:
+                totalDir += 1
+        print(totalDir)
+
+
+        if load_status == 0:
+            individuals.append(load_snake('population', 'best_snake_gen_{}'.format(totalDir-1), self.settings))
+
+
+        if load_status == 1:
+            if totalDir > self.settings['num_parents']:
+                gen_start = totalDir - self.settings['num_parents']
+                for i in range(gen_start,totalDir):
+                    individuals.append(load_snake('population', 'best_snake_gen_{}'.format(i), self.settings))     
+        elif totalDir <= self.settings['num_parents']:    
+            for i in range(0,totalDir):
+                individuals.append(load_snake('population', 'best_snake_gen_{}'.format(i), self.settings))
+
+        
+            for _ in range(self.settings['num_parents'] - totalDir):
+                individual = Snake(self.board_size, hidden_layer_architecture=self.settings['hidden_network_architecture'],
+                                hidden_activation=self.settings['hidden_layer_activation'],
+                                output_activation=self.settings['output_layer_activation'],
+                                lifespan=self.settings['lifespan'],
+                                apple_and_self_vision=self.settings['apple_and_self_vision'])
+                individuals.append(individual)
+
+
+        
+        self.best_fitness = 0
+        self.best_score = 0
+
+        self._current_individual = 0
+        self.population = Population(individuals)
+
+        self.snake = self.population.individuals[self._current_individual]
+        self.current_generation = 0
+        
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.update)
+        self.timer.start(1000./60)
+        self.new_game_two()
+
+
+    
+       
 
     def update(self) -> None:
         self.snake_widget_window.update()
@@ -184,7 +221,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 for root, dirs, files in os.walk(path):
                     for directories in dirs:
                         totalDir += 1
-                save_snake('population', 'best_snake_gen_{}'.format(totalDir), self.snake, self.settings)
+                #save_snake('population', 'best_snake_gen_{}'.format(totalDir), self.snake, self.settings)
 
                 self.next_generation()
             else:
@@ -313,6 +350,8 @@ class MainWindow(QtWidgets.QMainWindow):
         return child1_weights, child2_weights, child1_bias, child2_bias
 
     def _mutation(self, child1_weights: np.ndarray, child2_weights: np.ndarray,
+
+
                   child1_bias: np.ndarray, child2_bias: np.ndarray) -> None:
         scale = .2
         rand_mutation = random.random()
@@ -345,7 +384,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             raise Exception('Unable to determine valid mutation based off probabilities.')
 
-
+  
 class GeneticAlgoWidget(QtWidgets.QWidget):
     def __init__(self, parent, settings):
         super().__init__(parent)
