@@ -363,7 +363,7 @@ class Snake(Individual):
 
             self._frames_since_last_apple += 1
             #@NOTE: If you have different sized grids you may want to change this
-            if self._frames_since_last_apple > 100:
+            if self._frames_since_last_apple > 150:
                 self.is_alive = False
                 return False
 

@@ -23,7 +23,7 @@ SQUARE_SIZE = (35, 35)
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, settings, show=True, fps=60):
+    def __init__(self, settings, show=False, fps=12000):
         super().__init__()
         self.setAutoFillBackground(True)
         palette = self.palette()
@@ -70,44 +70,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.height = self._snake_widget_height + self.border[1] + self.border[3] + 200 + 200
 
         self.init_window()
-
-        if show:
-            self.show()
-
-       
-
-    def init_window(self):
-        self.centralWidget = QtWidgets.QWidget(self)
-        self.setCentralWidget(self.centralWidget)
-        self.setWindowTitle('Snake AI')
-        self.setGeometry(self.top, self.left, self.width, self.height)
-
-        #new GAme Button
-        self.newGameButton = QtWidgets.QPushButton(self)
-        self.newGameButton.setText("New Game")
-        self.newGameButton.move(500,500)
-        self.newGameButton.clicked.connect(self.new_game)
-
-
-    def new_game_two(self):
-        # Create the Neural Network window
-        self.nn_viz_window = NeuralNetworkViz(self.centralWidget, self.snake)
-        self.nn_viz_window.setGeometry(QtCore.QRect(0, 0, 600, self._snake_widget_height + self.border[1] + self.border[3] + 200))
-        self.nn_viz_window.setObjectName('nn_viz_window')
-
-        # Create SnakeWidget window
-        self.snake_widget_window = SnakeWidget(self.centralWidget, self.board_size, self.snake)
-        self.snake_widget_window.setGeometry(QtCore.QRect(600 + self.border[0], self.border[1], self.snake_widget_width, self.snake_widget_height))
-        self.snake_widget_window.setObjectName('snake_widget_window')
-
-        # Genetic Algorithm Stats window
-        self.ga_window = GeneticAlgoWidget(self.centralWidget, self.settings)
-        self.ga_window.setGeometry(QtCore.QRect(600, self.border[1] + self.border[3] + self.snake_widget_height, self._snake_widget_width + self.border[0] + self.border[2] + 100 + 200, 400-10))
-        self.ga_window.setObjectName('ga_window')
-
-        
-
-    def new_game(self):
         individuals: List[Individual] = []
         load_status = 1
         gen_start = 0
@@ -121,11 +83,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 totalDir += 1
         print(totalDir)
 
-
+        #If load status is 0, then only the latest and greatest snake will be loaded
+        #for testing purposes
         if load_status == 0:
-            individuals.append(load_snake('population', 'best_snake_gen_{}'.format(totalDir-1), self.settings))
+            gen_start = totalDir - self.settings['num_parents']
+            for i in range(gen_start,totalDir):
+                individuals.append(load_snake('population', 'best_snake_gen_{}'.format(totalDir-1), self.settings))
 
-
+        #maybe num parents should scale with existing population?
         if load_status == 1:
             if totalDir > self.settings['num_parents']:
                 gen_start = totalDir - self.settings['num_parents']
@@ -157,7 +122,47 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
-        self.timer.start(1000./60)
+        self.timer.start(1000./fps)
+
+        # Create the Neural Network window
+        self.nn_viz_window = NeuralNetworkViz(self.centralWidget, self.snake)
+        self.nn_viz_window.setGeometry(QtCore.QRect(0, 0, 600, self._snake_widget_height + self.border[1] + self.border[3] + 200))
+        self.nn_viz_window.setObjectName('nn_viz_window')
+
+        # Create SnakeWidget window
+        self.snake_widget_window = SnakeWidget(self.centralWidget, self.board_size, self.snake)
+        self.snake_widget_window.setGeometry(QtCore.QRect(600 + self.border[0], self.border[1], self.snake_widget_width, self.snake_widget_height))
+        self.snake_widget_window.setObjectName('snake_widget_window')
+
+        # Genetic Algorithm Stats window
+        self.ga_window = GeneticAlgoWidget(self.centralWidget, self.settings)
+        self.ga_window.setGeometry(QtCore.QRect(600, self.border[1] + self.border[3] + self.snake_widget_height, self._snake_widget_width + self.border[0] + self.border[2] + 100 + 200, 400-10))
+        self.ga_window.setObjectName('ga_window')
+
+        if show:
+            self.show()
+
+       
+
+    def init_window(self):
+        self.centralWidget = QtWidgets.QWidget(self)
+        self.setCentralWidget(self.centralWidget)
+        self.setWindowTitle('Snake AI')
+        self.setGeometry(self.top, self.left, self.width, self.height)
+
+        #new GAme Button
+        self.newGameButton = QtWidgets.QPushButton(self)
+        self.newGameButton.setText("New Game")
+        self.newGameButton.move(500,500)
+        self.newGameButton.clicked.connect(self.new_game)
+
+
+    def new_game_two(self):
+        print("print")
+
+        
+
+    def new_game(self):
         self.new_game_two()
 
 
@@ -221,7 +226,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 for root, dirs, files in os.walk(path):
                     for directories in dirs:
                         totalDir += 1
-                #save_snake('population', 'best_snake_gen_{}'.format(totalDir), self.snake, self.settings)
+                save_snake('population', 'best_snake_gen_{}'.format(totalDir), self.snake, self.settings)
 
                 self.next_generation()
             else:
