@@ -23,7 +23,7 @@ SQUARE_SIZE = (35, 35)
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, settings, show=True, fps=200):
+    def __init__(self, settings, show=True, fps=120):
         super().__init__()
         self.setAutoFillBackground(True)
         palette = self.palette()
@@ -61,11 +61,26 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.top = 150
         self.left = 150
-        self.width = self._snake_widget_width + 700 + self.border[0] + self.border[2]
-        self.height = self._snake_widget_height + self.border[1] + self.border[3] + 200
+        self.width = self._snake_widget_width + 700 + 200 + self.border[0] + self.border[2]
+        self.height = self._snake_widget_height + self.border[1] + self.border[3] + 200 + 200
         
         individuals: List[Individual] = []
+                    
+        #need to add to check population folder and auto load
+       
+        #cwd = os.getcwd()
 
+        path =  "population/"
+        name = 'best_snake' 
+        for root, dirs, files in os.walk(path):
+            if name in files:
+                print(os.path.join(root, name))
+
+        #for i in range(0,209):
+            #individuals.append(load_snake('population', 'best_snake_gen_{}'.format(i), self.settings))
+
+
+        
         for _ in range(self.settings['num_parents']):
             individual = Snake(self.board_size, hidden_layer_architecture=self.settings['hidden_network_architecture'],
                               hidden_activation=self.settings['hidden_layer_activation'],
@@ -73,6 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
                               lifespan=self.settings['lifespan'],
                               apple_and_self_vision=self.settings['apple_and_self_vision'])
             individuals.append(individual)
+       
 
         self.best_fitness = 0
         self.best_score = 0
@@ -110,7 +126,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Genetic Algorithm Stats window
         self.ga_window = GeneticAlgoWidget(self.centralWidget, self.settings)
-        self.ga_window.setGeometry(QtCore.QRect(600, self.border[1] + self.border[3] + self.snake_widget_height, self._snake_widget_width + self.border[0] + self.border[2] + 100, 200-10))
+        self.ga_window.setGeometry(QtCore.QRect(600, self.border[1] + self.border[3] + self.snake_widget_height, self._snake_widget_width + self.border[0] + self.border[2] + 100 + 200, 400-10))
         self.ga_window.setObjectName('ga_window')
 
 
@@ -163,6 +179,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 print('----Max fitness:', self.population.fittest_individual.fitness)
                 print('----Best Score:', self.population.fittest_individual.score)
                 print('----Average fitness:', self.population.average_fitness)
+
+                #Future Check Population folder and add variable to start appending to generation
+                save_snake('population\\', 'best_snake_gen_{}'.format(self.current_generation), self.snake, self.settings)
+
                 self.next_generation()
             else:
                 current_pop = self.settings['num_parents'] if self.current_generation == 0 else self._next_gen_size
@@ -365,7 +385,7 @@ class GeneticAlgoWidget(QtWidgets.QWidget):
 
         ROW = 0
         LABEL_COL, STATS_COL = LABEL_COL + 2, STATS_COL + 2
-
+        """ 
         #### GA setting ####
         self._create_label_widget_in_grid('GA Settings', font_bold, grid, ROW, LABEL_COL, TOP_LEFT)
         ROW += 1
@@ -407,7 +427,8 @@ class GeneticAlgoWidget(QtWidgets.QWidget):
 
         ROW = 0
         LABEL_COL, STATS_COL = LABEL_COL + 2, STATS_COL + 2
-
+ 
+         
         #### NN setting ####
         self._create_label_widget_in_grid('NN Settings', font_bold, grid, ROW, LABEL_COL, TOP_LEFT)
         ROW += 1
@@ -442,7 +463,7 @@ class GeneticAlgoWidget(QtWidgets.QWidget):
         apple_self_vision_type = settings['apple_and_self_vision'].lower()
         self._create_label_widget_in_grid(apple_self_vision_type, font, grid, ROW, STATS_COL, TOP_LEFT)
         ROW += 1
-
+        """
 
         grid.setSpacing(0)
         grid.setContentsMargins(0, 0, 0, 0)
@@ -517,7 +538,7 @@ class SnakeWidget(QtWidgets.QWidget):
         painter.setPen(pen)
         brush = QtGui.QBrush()
         brush.setColor(Qt.red)
-        painter.setBrush(QtGui.QBrush(QtGui.QColor(198, 5, 20)))
+        painter.setBrush(QtGui.QBrush(QtGui.QColor(0, 255, 0)))
         # painter.setBrush(brush)
 
         def _draw_line_to_apple(painter: QtGui.QPainter, start_x: int, start_y: int, drawable_vision: DrawableVision) -> Tuple[int, int]:
@@ -575,7 +596,7 @@ class SnakeWidget(QtWidgets.QWidget):
         if apple_location:
             painter.setRenderHints(QtGui.QPainter.HighQualityAntialiasing)
             painter.setPen(QtGui.QPen(Qt.black))
-            painter.setBrush(QtGui.QBrush(Qt.green))
+            painter.setBrush(QtGui.QBrush(Qt.red))
 
             painter.drawRect(apple_location.x * SQUARE_SIZE[0],
                              apple_location.y * SQUARE_SIZE[1],
